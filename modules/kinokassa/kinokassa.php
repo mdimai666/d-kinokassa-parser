@@ -184,26 +184,44 @@ class Kinokassa extends TParser{
     function generateHtml($e){
         $html = "";
         $pref = $this->getDWRelUrl();
+        $url = $this->url;
+
+        $tm = (new DateTime(current_time( 'mysql')))->getTimestamp();
+        $hash = "?v=".wp_date('j-m-Y-H:i:s', $tm, new DateTimeZone('UTC'));
         
 
         foreach ($e['styles'] as $s) {
             $f = $pref.basename(parse_url($s, PHP_URL_PATH));
-            $html .= "<link rel=\"stylesheet\" href=\"$f\"/>".PHP_EOL;
+            $html .= "<link rel=\"stylesheet\" href=\"$f$hash\"/>".PHP_EOL;
         }
 
-        $html .= "<div id=\"root\"></div>".PHP_EOL;
+        $html .= "<div id=\"root\" data-domain=\"$url\" kinokassa=1></div>".PHP_EOL;
 
 
         $html .= $e['kinositeSettings'].PHP_EOL;
         $html .= $e['kinokassaApiUrl'].PHP_EOL;
+
+        $html .= "
+            <!-- KinoWidget -->
+            <script>
+                (function(d,t,u,e,s){
+                e=d.createElement(t);s=d.getElementsByTagName(t)[0];
+                e.async=true;e.src=u+'?v='+Date.now();s.parentNode.insertBefore(e,s);
+                })(document,'script','//kinowidget.kinoplan.ru/js/kinowidget.min.js');
+            </script>
+            <!-- /KinoWidget -->
+        ";
 
         foreach ($e['js'] as $s) {
             $f = $pref.basename(parse_url($s, PHP_URL_PATH));
             if(strpos($s, 'kinosite-main.') !== false){
                 $f = $pref.'__'.basename(parse_url($s, PHP_URL_PATH));
             }
-            $html .= "<script src=\"$f\"></script>".PHP_EOL;
+            $html .= "<script src=\"$f$hash\"></script>".PHP_EOL;
         }
+
+        $html .= "<script src=\"$pref../../front/app_hooks.js?$hash\"></script>".PHP_EOL;
+
 
         $dw = $this->getDir();
         $this->echofile($dw.'index.html',$html, false);
@@ -230,8 +248,7 @@ class Kinokassa extends TParser{
 
                 $content = str_replace($pe, $relDwUrl, $content);
 
-
-                $content = str_replace('/img/', $domain.'img/', $content);
+                // $content = str_replace('/img/', $domain.'img/', $content);//renameLinksInUrls
 
                 $this->echofile($__fname,$content, false);
 
@@ -241,9 +258,63 @@ class Kinokassa extends TParser{
         }
     }
 
+    function renameLinksInUrls($e){
+
+        $dw = $this->getDir();
+        $relDwUrl = "\"".$this->getDWRelUrl()."\"";//"/wp-content/plugins/d-kinokassa-parser/saves/<name>/"
+
+        $domain = trim($this->url, '/').'/';
+
+        foreach ($e['js'] as $s) {
+
+            $isSpecial = strpos($s, 'kinosite-main.') !== false;
+
+            $url = $s;
+            $fname = $dw.basename(parse_url($url, PHP_URL_PATH));
+            $__fname = $dw.'__'.basename(parse_url($url, PHP_URL_PATH));
+            if(!$isSpecial)
+            $content = file_get_contents($fname);
+            else 
+            $content = file_get_contents($__fname);
+
+            $content = str_replace('/img/', $domain.'img/', $content);
+
+            if(!$isSpecial)
+            $this->echofile($fname,$content, false);
+            else
+            $this->echofile($__fname,$content, false);
+
+        }
+
+        foreach ($e['chunkjsList'] as $s) {
+
+            $isSpecial = false;
+
+            $url = $s;
+            $fname = $dw.basename(parse_url($url, PHP_URL_PATH));
+            $__fname = $dw.'__'.basename(parse_url($url, PHP_URL_PATH));
+            if(!$isSpecial)
+            $content = file_get_contents($fname);
+            else 
+            $content = file_get_contents($__fname);
+
+            $content = str_replace('/img/', $domain.'img/', $content);
+            // $content = str_replace('/release/', $domain.'release/', $content);
+
+            if(!$isSpecial)
+            $this->echofile($fname,$content, false);
+            else
+            $this->echofile($__fname,$content, false);
+                
+
+        }
+    }
+
     public function formatter(){
 
+        Kinokassa::CleanDir($this->name);
         mkdir($this->getDir());
+
 
         $raw = $this->raw;
 
@@ -259,6 +330,7 @@ class Kinokassa extends TParser{
         
         $this->downloadReqFiles($ss);
         $this->renameChunksPath($ss);
+        $this->renameLinksInUrls($ss);
         $this->generateHtml($ss);
         return;
         
@@ -283,9 +355,15 @@ class Kinokassa extends TParser{
     }
 
     public function save(){
-        
+
     }
 
+    public static function CleanDir($name){
+        $dw = Kinokassa::DirByName($name);
+        if(is_dir($dw)){
+            TParser::d_recurse_rmdir($dw);
+        }
+    }
 }
 
 // $Instagram = new Instagram('mdimai000');

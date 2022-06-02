@@ -251,10 +251,7 @@ function d_social_feed__save_data() {
 
             if($exist == false) {
                 unset($option['feeds'][$name]);
-                $dw = Kinokassa::DirByName($name);
-                if(is_dir($dw)){
-                    d_recurse_rmdir($dw);
-                }
+                Kinokassa::CleanDir($name);
 
             }
         }
@@ -393,19 +390,3 @@ function d_social_feed__sync_AllFeeds(){
     ));
 }
 
-function d_recurse_rmdir($src) {
-    $dir = opendir($src);
-    while(false !== ( $file = readdir($dir)) ) {
-        if (( $file != '.' ) && ( $file != '..' )) {
-            $full = $src . '/' . $file;
-            if ( is_dir($full) ) {
-                rrmdir($full);
-            }
-            else {
-                unlink($full);
-            }
-        }
-    }
-    closedir($dir);
-    rmdir($src);
-}
