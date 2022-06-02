@@ -47,6 +47,7 @@ class TParser {
     }
 
     public function echofile(string $filename, $data, bool $objtojson ){
+        $filename = str_replace(__DIR__, '', $filename);
         $fp = fopen(__DIR__.'/'.$filename, 'w');
 
         if (!$fp) {

@@ -61,8 +61,8 @@ class DSocialFeed {
         $username = $net['url'];
         $token = $net['token'];
 
-        if($name == 'kinokassa')
-            $parser = new Kinokassa($username);
+        // if($name == 'kinokassa')
+            $parser = new Kinokassa($name, $username);
         // else if($name == 'vk') 
         //     $parser = new VK_parcer($username, $token);
         // else if($name == 'youtube')

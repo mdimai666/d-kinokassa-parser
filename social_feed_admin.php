@@ -77,7 +77,7 @@ function d_social_feed_render() {
 
                     <thead>
                         <tr>
-                            <th>Социальная сеть</th>
+                            <th>#slug</th>
                             <th>Домен</th>
                             <!-- <th>Ключи</th> -->
                             <th>Функции</th>
@@ -99,7 +99,11 @@ function d_social_feed_render() {
                         ?>
                         <tr data-social="<?php echo $name ?>">
                             <td>
-                                <?=$name; ?>
+                                <h3 style="margin:0">
+                                    <?=$name; ?>
+                                </h3>
+                                <!-- <br> -->
+                                <span style="color:grey;">[dkinokassa slug="<?=$name;?>"]</span>
                                 <input type="hidden" 
                                     name="feeds[<?=$name; ?>][name]" size="30" 
                                     value="<?=$name; ?>" 
@@ -136,7 +140,8 @@ function d_social_feed_render() {
                                 </div>
                             </td>
                             <td class="last_sync">
-                                <?php echo ($item['last_sync'])?(gmdate('j M Y, H:i', $item['last_sync'])):''; ?>
+                                <?php //echo ($item['last_sync'])?(gmdate('j M Y, H:i', $item['last_sync'])):''; ?>
+                                <?php echo ($item['last_sync'])?(wp_date('j M Y, H:i', $item['last_sync'], new DateTimeZone('UTC'))):''; ?>
                             </td>
                             <td>
                                 <div class="feed-tools">
@@ -244,7 +249,14 @@ function d_social_feed__save_data() {
 
             $exist = array_key_exists($name, $feeds);
 
-            if($exist == false) unset($option['feeds'][$name]);
+            if($exist == false) {
+                unset($option['feeds'][$name]);
+                $dw = Kinokassa::DirByName($name);
+                if(is_dir($dw)){
+                    d_recurse_rmdir($dw);
+                }
+
+            }
         }
 
         $option['tick'] = $option['tick'] + 1;
@@ -379,4 +391,21 @@ function d_social_feed__sync_AllFeeds(){
         'Message' => $messages,
         'Errors' => $errors
     ));
+}
+
+function d_recurse_rmdir($src) {
+    $dir = opendir($src);
+    while(false !== ( $file = readdir($dir)) ) {
+        if (( $file != '.' ) && ( $file != '..' )) {
+            $full = $src . '/' . $file;
+            if ( is_dir($full) ) {
+                rrmdir($full);
+            }
+            else {
+                unlink($full);
+            }
+        }
+    }
+    closedir($dir);
+    rmdir($src);
 }

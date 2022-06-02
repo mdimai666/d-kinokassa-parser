@@ -128,7 +128,10 @@ function d_init_social_feedpage($) {
         
         let slug = await prompt('Напишите SLUG кинотеатра (будет использоваться для shortcode)');
 
-        console.warn('slug', slug);
+        slug = slug.replace(/^https?:\/\//,'')
+        slug = slug.replace(/[^A-Za-z\.\-_0-9]/g,'')
+
+        // console.warn('slug', slug);
 
         let tr = $(`
             <tr>

@@ -3,19 +3,18 @@
 require_once __DIR__."/../Parser.php";
 
 class Kinokassa extends TParser{
-    public $name = 'kinokassa';
-    public $user = "";
+    public $name = '';
+    public $url = "";
     public $raw;
 
-    public function __construct($user)
+    public function __construct($slug, $url)
     {
-        $this->user = $user;
+        $this->name = $slug;
+        $this->url = $url;
     }
     
     public function getJson(){
-        // $url = "https://www.instagram.com/$this->user/?__a=1";
-        // $url = "https://www.kinokassakinokassa.com/$this->user";
-        $url = "https://cinema-center.ru";
+        $url = $this->url;
 
 
         $context = stream_context_create(
@@ -26,8 +25,11 @@ class Kinokassa extends TParser{
             )
         );
 
-        // $html = file_get_contents($url, false, $context);
-        $html = file_get_contents(__DIR__.'/2index.html', false, $context);
+        mkdir($this->getDir());
+
+
+        $html = file_get_contents($url, false, $context);
+        // $html = file_get_contents(__DIR__.'/2index.html', false, $context);
 
         // $string = insta__curl_get_contents($url);
 
@@ -44,6 +46,14 @@ class Kinokassa extends TParser{
 
     public function sampledata(){
         return json_decode( file_get_contents(__DIR__.'/instagram.json') );
+    }
+
+    public static function DirByName($name){
+        return __DIR__.'/../../saved/'.$name.'/';
+    }
+
+    public function getDir(){
+        return Kinokassa::DirByName($this->name);
     }
 
     function readEntities($raw){
@@ -78,9 +88,9 @@ class Kinokassa extends TParser{
     }
 
     function downloadReqFiles($e){
-        $dw = '/kinokassa/dw/';
+        $dw = $this->getDir();
 
-        $domain = "https://cinema-center.ru/";
+        $domain = trim($this->url, '/').'/';
 
         // return;
 
@@ -90,11 +100,11 @@ class Kinokassa extends TParser{
             $this->downloadFile($url, $fname);
         }
 
-        // foreach ($e['js'] as $s) {
-        //     $url = $domain.$s;
-        //     $fname = $dw.basename(parse_url($url, PHP_URL_PATH));
-        //     $this->downloadFile($url, $fname);
-        // }
+        foreach ($e['js'] as $s) {
+            $url = $domain.$s;
+            $fname = $dw.basename(parse_url($url, PHP_URL_PATH));
+            $this->downloadFile($url, $fname);
+        }
 
         $chunkjsList = [];
 
@@ -104,7 +114,7 @@ class Kinokassa extends TParser{
                 $url = $domain.$s;
                 $fname = $dw.basename(parse_url($url, PHP_URL_PATH));
                 // $content = file_get_contents(__DIR__.'/'.$fname);
-                $fname = __DIR__.'/..'.$fname;
+                // $fname = __DIR__.'/..'.$fname;
                 $content = file_get_contents($fname);
 
                 // $this->echofile($fname.'1','123', false);
@@ -118,7 +128,7 @@ class Kinokassa extends TParser{
                     $chunk_url = $domain."/common/chunks/".$chunkName;
                     $chunk_fname_read = __DIR__.'/..'.$dw.$chunkName;
                     $chunk_fname = $dw.$chunkName;
-                    // $this->downloadFile($chunk_url, $chunk_fname);
+                    $this->downloadFile($chunk_url, $chunk_fname);
                 }
 
             }
@@ -126,7 +136,7 @@ class Kinokassa extends TParser{
 
         $ss = $e;
         $ss['chunkjsList'] = $chunkjsList;
-        $this->echofile('kinokassa/ss.json', $ss, true);
+        $this->echofile($dw.'ss.json', $ss, true);
 
     }
 
@@ -165,8 +175,9 @@ class Kinokassa extends TParser{
     function getDWRelUrl(){
         $mm = plugins_url();
         $pp = 'wp-content/plugins';
-        $pref = plugins_url("/kinokassa/dw/",dirname(__FILE__));
+        $pref = plugins_url("/kinokassa/",dirname(__FILE__));
         $pref = $pp.str_replace($mm,'', $pref);
+        $pref = str_replace('/modules/kinokassa/','', $pref).'/saved/'.$this->name.'/';
         return $pref;
     }
 
@@ -194,31 +205,33 @@ class Kinokassa extends TParser{
             $html .= "<script src=\"$f\"></script>".PHP_EOL;
         }
 
-        $dw = '/kinokassa/dw/';
+        $dw = $this->getDir();
         $this->echofile($dw.'index.html',$html, false);
 
     }
 
     function renameChunksPath($e){
 
-        $dw = '/kinokassa/dw/';
+        $dw = $this->getDir();
         $pe = "\"common/chunks/\"";
-        $relDwUrl = "\"".$this->getDWRelUrl()."\"";//"/wp-content/plugins/d-kinokassa-parser/modules/kinokassa/dw/"
+        $relDwUrl = "\"".$this->getDWRelUrl()."\"";//"/wp-content/plugins/d-kinokassa-parser/saves/<name>/"
 
+        $domain = trim($this->url, '/').'/';
 
         foreach ($e['js'] as $s) {
             if(strpos($s, 'kinosite-main.') !== false){//kinosite-main.min.2832beef0be6477ff575.js
-                $url = $domain.$s;
+                $url = $s;
                 $fname = $dw.basename(parse_url($url, PHP_URL_PATH));
                 $__fname = $dw.'__'.basename(parse_url($url, PHP_URL_PATH));
                 // $content = file_get_contents(__DIR__.'/'.$fname);
-                $fname2 = __DIR__.'/..'.$fname;
-                $content = file_get_contents($fname2);
+                // $fname2 = __DIR__.'/..'.$fname;
+                // $content = file_get_contents($fname2);
+                $content = file_get_contents($fname);
 
                 $content = str_replace($pe, $relDwUrl, $content);
 
 
-                $content = str_replace('/img/', 'https://cinema-center.ru/img/', $content);
+                $content = str_replace('/img/', $domain.'img/', $content);
 
                 $this->echofile($__fname,$content, false);
 
@@ -230,106 +243,36 @@ class Kinokassa extends TParser{
 
     public function formatter(){
 
+        mkdir($this->getDir());
+
         $raw = $this->raw;
 
-        return;
-
-        $this->echofile('kinokassa/2index.html', $raw, false);
-
+        // return;
+        // $this->echofile('kinokassa/2index.html', $raw, false);
         // file_put_contents(__DIR__.'/2index.html', $raw);
         
+        //test
+        // $ss = json_decode(file_get_contents($this->getDir().'ss.json'), true);
+
         $ss = $this->readEntities($raw);
-        $this->echofile('kinokassa/ss.json', $ss, true);
+        $this->echofile($this->getDir().'ss.json', $ss, true);
         
         $this->downloadReqFiles($ss);
-        
         $this->renameChunksPath($ss);
         $this->generateHtml($ss);
+        return;
         
 
-        throw new Error('not implement');
+        // throw new Error('not implement');
 
-        if(empty($this->raw))
-            // $raw = $this->sampledata();
-            $raw = $this->getJson();
-        else 
-            $raw = $this->raw;
-
-        // $user = $raw->graphql->user; //for non HTML json- from special page ?_a=1
-        
-        $user = $raw->entry_data->ProfilePage[0]->graphql->user;
-
-        // __dump($user);
-
-        $posts = array();
-
-        $image_save_path = __DIR__.'/temp/';
-
-        $break = false;
-
-        $this->echofile('wi.json', $raw, true);
-        if($user == null) throw new Error('isnta $user is NULL');
-
-        throw new Error('cc:'.count($user->edge_owner_to_timeline_media->edges));
-
-        foreach($user->edge_owner_to_timeline_media->edges as $nodes){
-            $e = $nodes->node;
-
-            $desc = '';
-            try {
-                $d = $e->edge_media_to_caption->edges;
-                if(count($d)>0)
-                    $desc = $d[0]->node->text;
-            } catch (\Throwable $th) {
-            }
-
-            $post = array(
-                'id' => $e->id,
-                'channelId' => $e->shortcode,
-                'title' => $user->full_name,
-
-                'link' => 'https://www.instagram.com/p/'.$e->shortcode,
-                // 'published' => date("Y-m-d H:i:s",$e->taken_at_timestamp),
-                'published' => $e->taken_at_timestamp,
-                'updated' => '',
-
-                'thumbnail' => $e->display_url,
-                'description' => urldecode($desc),
-
-                'views' => 0,
-                'likes' => $e->edge_liked_by->count,
-
-                'is_video' => $e->is_video,
-                'comments' => $e->edge_media_to_comment->count,
-            );
-
-            //save image local
-            if(!$break){
-               
-                $break = true;
-                $post['thumbnail'] = 'xxx';
-                // $img_filename = $image_save_path.$post['id'].'.jpg';
-                // file_put_contents($img_filename, file_get_contents($post['thumbnail']));
-                // $post['thumbnail'] = get_stylesheet_directory_uri().'/modules/instagram/temp/'.$post['id'].'.jpg';
+        // if(empty($this->raw))
+        //     // $raw = $this->sampledata();
+        //     $raw = $this->getJson();
+        // else 
+        //     $raw = $this->raw;
 
 
-            }
-
-
-            $posts[] = $post;
-        }
-
-        $data = array(
-            'title' => $user->full_name,
-            'author' => $user->username,
-            'url' => 'https://www.instagram.com/'.$user->username,
-            'img' => $user->profile_pic_url,
-
-            'followers' => $user->edge_followed_by->count,
-            'follow' => $user->edge_follow->count,
-
-            'posts' => $posts,
-        );
+        $data = [];
 
         $this->json = $data;
         return $data;
@@ -339,6 +282,9 @@ class Kinokassa extends TParser{
         return $this->json;
     }
 
+    public function save(){
+        
+    }
 
 }
 
