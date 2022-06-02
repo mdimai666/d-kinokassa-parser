@@ -8,6 +8,7 @@ Author: mdimai666
 Author URI: http://amai-lab.com
 */
 
+require_once 'DSocialFeed.php';
 require_once 'social_feed.php';
 require_once 'modules/kinokassa/kinokassa.php';
 require_once 'shortcodes.php';
