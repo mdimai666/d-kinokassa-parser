@@ -42,10 +42,12 @@ function d_init_social_feedpage($) {
 
     var feed = {};
 
-    $('form#social_list').submit(function (e) {
-        e.preventDefault();
+    function submitForm1(callback){
+        let form =  $('form#social_list');
         $('#publishing-action .spinner').addClass('is-active');
-        var postdata = $(this).serializeJSON();
+        var postdata = $(form).serializeJSON();
+
+        // console.warn('save', postdata);
 
         wpajax('d_social_feed_save_data', postdata, function (data) {
             console.log(data);
@@ -55,8 +57,17 @@ function d_init_social_feedpage($) {
                 feed.show_message(data.Message);
             else 
                 feed.show_error(data.Message || 'произошла ошибка');
+
+            if(callback) callback(data.Result == 'OK');
            
         });
+    }
+
+    $('form#social_list').submit(function (e) {
+        e.preventDefault();
+
+        submitForm1();
+        
         return false;
     });
 
@@ -108,6 +119,42 @@ function d_init_social_feedpage($) {
            
         });
     });
+
+    $('.feed-tools .delete').click(function(){
+        $(this).parents('tr').remove();
+    })
+
+    $('.d-feed-add-button').click(async function(){
+        
+        let slug = await prompt('Напишите SLUG кинотеатра (будет использоваться для shortcode)');
+
+        console.warn('slug', slug);
+
+        let tr = $(`
+            <tr>
+                <td>
+                    ${slug}
+                    <span class="spinner is-active"></span>
+
+                    <input type="hidden" 
+                    name="feeds[${slug}][name]" size="30" 
+                    value="${slug}" 
+                    id="feeds[${slug}][url]" 
+                    spellcheck="true" autocomplete="off">
+                </td>
+            </tr>
+        `)
+
+        $('table.feeds-table').append(tr);
+
+        submitForm1(function(success){
+            if(success){
+                location.reload();
+            }
+        })
+
+
+    })
 
     // function fade_message() {
     //     $('#saved').fadeOut(1000);

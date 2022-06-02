@@ -48,6 +48,7 @@ add_action('admin_footer', 'amai_varibles_admin_js');
 
 //---------------------
 
+// http://wordpress.localhost:81/wp-json/dkk/v1/status
 add_action( 'rest_api_init', function () {
     // register_rest_route( 'dsearch/v1', '/posts/(?P<id>\d+)', array(
     //   'methods' => 'GET',
@@ -61,9 +62,14 @@ add_action( 'rest_api_init', function () {
 
 if ( ! function_exists( 'd_ajax_status' ) ) :
 function d_ajax_status(){
+
+    $feed = new DSocialFeed();
+    $option = $feed->get_option(true);
+
     
     $response = [
-        'Response' => 'OK'
+        'Response' => 'OK',
+        'Data' => $option,
     ];
 
 

@@ -14,7 +14,7 @@ function d_social_feed_init() {
     $role->add_cap("d_social_feed_page_cap", true);
 
 	// add_menu_page( 'My Top Level Menu Example', __('Уведомления'), 'manage_options', 'myplugin/myplugin-admin-page.php', 'notify_admin_page', 'dashicons-format-chat', 2 );
-    add_menu_page( __('Лента социальных сетей'), __('Лента соц. сетей'), 
+    add_menu_page( __('Кинотеатры'), __('Кинотеатры'), 
         'd_social_feed_page_cap', 'd_social_feed', 'd_social_feed_render', 'dashicons-share', 10 );
 
     
@@ -55,7 +55,7 @@ function d_social_feed_render() {
     ?>
     <div class="wrap p12">
 
-        <h1><?php _e('Настройки социальных сетей') ?></h1>
+        <h1><?php _e('Настройки кинотеаторов') ?></h1>
 
         <div id="d_social_feed_page">
 
@@ -73,15 +73,16 @@ function d_social_feed_render() {
                 </div>
 
                 <h2 class="title">Аккаунты</h2>
-                <table class="form-table">
+                <table class="form-table feeds-table">
 
                     <thead>
                         <tr>
                             <th>Социальная сеть</th>
-                            <th>Идентификатор</th>
-                            <th>Ключи</th>
+                            <th>Домен</th>
+                            <!-- <th>Ключи</th> -->
                             <th>Функции</th>
                             <th>Последняя синхронизация</th>
+                            <th></th>
                         </tr>
                     </thead>
 
@@ -90,35 +91,44 @@ function d_social_feed_render() {
                         <td>< ?php echo $option['tick'] ? ></td>
                     </tr> -->
 
-                    <?php foreach($feed->get_list1() as $name): ?>
+
+                    <?php foreach($option['feeds'] as $name => $val): ?>
 
                         <?php
                             $item = $option['feeds'][$name];                    
                         ?>
                         <tr data-social="<?php echo $name ?>">
                             <td>
-                                <?php echo $name ?>            
-                            </td>
-                            <td>
-                                <input type="text" 
-                                    name="<?php echo $name; ?>_url" size="30" 
-                                    value="<?php echo $item['url']; ?>" 
-                                    id="<?php echo $name; ?>_url" 
+                                <?=$name; ?>
+                                <input type="hidden" 
+                                    name="feeds[<?=$name; ?>][name]" size="30" 
+                                    value="<?=$name; ?>" 
+                                    id="feeds[<?=$name; ?>][name]" 
                                     placeholder="<?php echo $placeholders[$name] ?>"
                                     spellcheck="true" autocomplete="off">
                             </td>
                             <td>
+                                <input type="text" 
+                                    name="feeds[<?=$name; ?>][url]" size="30" 
+                                    value="<?php echo $item['url']; ?>" 
+                                    id="feeds[<?=$name; ?>][url]" 
+                                    placeholder="<?php echo $placeholders[$name] ?>"
+                                    spellcheck="true" autocomplete="off">
+                            </td>
+                            <?php if(0): ?>                                
+                            <td>
                                 <?php if($placeholders_token[$name]): ?>
                                     <input type="text" 
-                                        name="<?php echo $name; ?>_token" size="30" 
+                                        name="feeds[<?=$name; ?>][token]" size="30" 
                                         value="<?php echo $item['token']; ?>" 
-                                        id="<?php echo $name; ?>_token" 
+                                        id="feeds[<?=$name; ?>][token]" 
                                         placeholder="<?php echo $placeholders_token[$name] ?>"
                                         spellcheck="true" autocomplete="off">
 
                                 <?php endif; ?>
 
                             </td>
+                            <?php endif; ?>
                             <td>
                                 <div class="update-feed-action">
                                     <span class="spinner"></span>
@@ -128,9 +138,17 @@ function d_social_feed_render() {
                             <td class="last_sync">
                                 <?php echo ($item['last_sync'])?(gmdate('j M Y, H:i', $item['last_sync'])):''; ?>
                             </td>
+                            <td>
+                                <div class="feed-tools">
+                                    <a class="delete" href="#" style="color:#b32d2e" aria-label="удалить" role="button">Удалить</a>
+                                </div>
+                            </td>
+
                         </tr>
                     <?php endforeach; ?>
                 </table>
+
+                <input type="button" value="Добавить" class="button d-feed-add-button">
 
             </form>
             
@@ -206,24 +224,27 @@ function d_social_feed__save_data() {
 
     try{
         $feed = new DSocialFeed();
-
-        $socials_list = $feed->get_list1();
-
-        $proerties = ['url','token'];
-
         $option = $feed->get_option(true);
 
-        foreach($socials_list as $social){
-            foreach($proerties as $prop){
+        $properties = ['url','token'];
+        $feeds = $_POST['feeds'];
 
-                $name = $social.'_'.$prop;
-                if(isset($_POST[$name])){
-                    if(!isset($option['feeds'][$social]))
-                        $option['feeds'][$social] = [];
-                    $option['feeds'][$social][$prop] = $_POST[$name];
-                }
 
+        foreach($feeds as $name => $val){
+            foreach($properties as $prop){
+
+                if(!isset($option['feeds'][$name]))
+                    $option['feeds'][$name] = [];
+
+                $option['feeds'][$name][$prop] = $val[$prop];
             }
+        }
+
+        foreach($option['feeds'] as $name => $val){
+
+            $exist = array_key_exists($name, $feeds);
+
+            if($exist == false) unset($option['feeds'][$name]);
         }
 
         $option['tick'] = $option['tick'] + 1;
@@ -260,9 +281,9 @@ function d_social_feed__sync_feed() {
     try{
         $feed = new DSocialFeed();
 
-        $socials_list = $feed->get_list1();
-
         $option = $feed->get_option(true);
+        
+        $socials_list = array_keys($option['feeds']);
 
         $net = $option['feeds'][$social_name];
 
@@ -307,9 +328,9 @@ function d_social_feed__sync_AllFeeds(){
     try {
         $feed = new DSocialFeed();
 
-        $socials_list = $feed->get_list1();
-
         $option = $feed->get_option(true);
+
+        $socials_list = array_keys($option['feeds']);
 
         foreach ($socials_list as $social_name) {
             

@@ -30,11 +30,6 @@ class DSocialFeed {
         ];
     }
 
-    public function get_list1(){
-        // return ['instagram', 'vk', 'youtube', 'smi'];
-        return ['kinokassa'];
-    }
-
     public function update_feed($name){
         
         $parser = $this->get_parser($name);
