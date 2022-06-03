@@ -183,7 +183,7 @@ class Kinokassa extends TParser{
 
     function generateHtml($e){
         $html = "";
-        $pref = $this->getDWRelUrl();
+        $pref = '/'.$this->getDWRelUrl();
         $url = $this->url;
 
         $tm = (new DateTime(current_time( 'mysql')))->getTimestamp();

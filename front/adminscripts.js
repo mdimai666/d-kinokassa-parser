@@ -128,6 +128,8 @@ function d_init_social_feedpage($) {
         
         let slug = await prompt('Напишите SLUG кинотеатра (будет использоваться для shortcode)');
 
+        if(!slug) return;
+
         slug = slug.replace(/^https?:\/\//,'')
         slug = slug.replace(/[^A-Za-z\.\-_0-9]/g,'')
 

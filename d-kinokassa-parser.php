@@ -3,7 +3,7 @@
 Plugin Name: Kinokassa parser
 Plugin URI: http://amai-lab.com
 Description: Предоставляет список афиш
-Version: 0.5
+Version: 0.6
 Author: mdimai666
 Author URI: http://amai-lab.com
 */
