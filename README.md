@@ -1,5 +1,5 @@
 # Wordpress kinokassa parser
-wordpres plugin
+wordpress plugin
 
 ![Screenshot](screenshot.png)
 
